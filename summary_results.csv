@@ -1,0 +1,7 @@
+Original_Question,Total_Augmentations,Correct_Attempts,Accuracy,Correct_Answer,LLM_Answers
+Chronic urethral obstruction due to benign prismatic hyperplasia can lead to the following change in kidney parenchyma,10,10,1.0,3,"['3', '3', '3', '3', '3', '3', '3', '3', '3', '3']"
+Which vitamin is supplied from only animal source:,10,10,1.0,3,"['3', '3', '3', '3', '3', '3', '3', '3', '3', '3']"
+All of the following are surgical options for morbid obesity except -,10,10,1.0,4,"['4', '4', '4', '4', '4', '4', '4', '4', '4', '4']"
+"Following endaerectomy on the right common carotid, a patient is found to be blind in the right eye. It is appears that a small thrombus embolized during surgery and lodged in the aery supplying the optic nerve. Which aery would be blocked?",10,0,0.0,1,"['4', '4', '4', '4', '4', '4', '4', '4', '4', '4']"
+Growth hormone has its effect on growth through?,10,3,0.3,2,"['4', '4', '4', '4', '4', '4', '4', '2', '2', '2']"
+Scrub typhus is transmitted by: September 2004,10,0,0.0,3,"['2', '2', '2', '2', '2', '2', '2', '2', '2', '2']"
