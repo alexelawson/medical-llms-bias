@@ -381,7 +381,17 @@ def main():
     parser.add_argument("--verbose", action="store_true",
                       help="Print detailed output")
     
+    # Modify start and end arguments to be required
+    parser.add_argument("--start", type=int, required=True,
+                      help="Starting index for data chunking")
+    parser.add_argument("--end", type=int, required=True,
+                      help="Ending index for data chunking")
+    
     args = parser.parse_args()
+    
+    # Modify output directory to include start and end indices
+    base_output_dir = args.output_dir.rstrip('/')  # Remove trailing slash if present
+    args.output_dir = f"{base_output_dir}_{args.start}_{args.end}"
     
     # Set up environment
     workdir = Path.cwd()
@@ -393,8 +403,16 @@ def main():
     
     # Load dataset
     df = load_dataset(args.data)
-
-    df = df.head(60)
+    
+    # Validate and apply chunking
+    if args.start >= len(df):
+        raise ValueError(f"Start index {args.start} is out of range. Dataset has {len(df)} rows.")
+    if args.end > len(df):
+        raise ValueError(f"End index {args.end} is out of range. Dataset has {len(df)} rows.")
+    if args.start >= args.end:
+        raise ValueError(f"Start index ({args.start}) must be less than end index ({args.end})")
+    
+    df = df.iloc[args.start:args.end]
     
     # Evaluate questions
     results_df = evaluate_questions(df, tokenizer, model, args.samples, args.verbose)
