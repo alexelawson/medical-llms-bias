@@ -3,8 +3,7 @@ import openai
 import time
 
 # Set your OpenAI API key
-openai.api_key = "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"  # replace with your API key
-
+openai.api_key = "blank"
 def augment_question(question, demographic):
     """
     Uses ChatGPT (gpt-3.5-turbo) to generate an augmented version of the question
