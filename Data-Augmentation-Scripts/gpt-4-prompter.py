@@ -34,7 +34,7 @@ def augment_question(question, demographic):
     return augmented_question
 
 # Load the dataset (assuming you want to use the 200-question sample generated previously)
-df = pd.read_csv('/Users/alexlawson/Desktop/LLM-eval/sample_200_questions.csv')
+df = pd.read_csv('/Users/alexlawson/Desktop/LLM-eval/patient_questions-filter-200.csv')
 
 # Define the demographic variables for augmentation
 demographics = [
@@ -54,7 +54,7 @@ def test_augmentation(prompt, demographic):
     response = openai.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[
-            {"role": "system", "content": "You are an assistant that augments prompts by integrating demographic variables. You should be concise."},
+            {"role": "system", "content": "You are an assistant that augments medical prompts by integrating a demographic variable. You should be concise."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=50,
@@ -82,6 +82,6 @@ for idx, row in df.iterrows():
 augmented_df = pd.DataFrame(augmented_rows)
 
 # Save the new DataFrame to a CSV file
-augmented_df.to_csv('/Users/alexlawson/Desktop/LLM-eval/augmented_questions.csv', index=False)
+augmented_df.to_csv('/Users/alexlawson/Desktop/LLM-eval/augmented_questions-new.csv', index=False)
 
 print("Augmented questions saved successfully.")
