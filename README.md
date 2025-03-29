@@ -1,9 +1,13 @@
 # medical-diagnosis-bias
 Topics in Artificial Intelligence - NLP COMMONSENSE-Final Project
 
-**Visuals** from the first analysis can be found in the [Visuals](./Visuals) folder. 
+**Results from First Analysis:**
 
-**Results** .csv can be found in the [Results01](./Results01) folder. 
+- _**Visuals**_ from the first analysis can be found in the [Visuals](./Visuals) folder. 
+
+- _**Results**_ .csv can be found in the [Results01](./Results01) folder.
+
+**Next Steps:**
 
 **Datasets** for second analysis can be found in the [Datasets](./Datasets) folder. 
 _Within the datasets folder there are two files:
