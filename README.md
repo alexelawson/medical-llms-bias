@@ -2,6 +2,7 @@
 Topics in Artificial Intelligence - NLP COMMONSENSE-Final Project
 
 **Visuals** from the first analysis can be found in the [Visuals](./Visuals) folder. 
+
 **Results** .csv can be found in the [Results01](./Results01) folder. 
 
 **Datasets** for second analysis can be found in the [Datasets](./Datasets) folder. 
