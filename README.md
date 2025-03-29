@@ -6,6 +6,8 @@
 
 - _**Results**_ .csv can be found in the [Results01](./Results01) folder.
 
+- _**Python Scripts Used to Produce Analysis/Results**_ can be found in the [Data-Augmentation-Scripts](./Data-Augmentation-Scripts) folder. The prompter for GPT augmentation can also be found in this folder. 
+
 **Next Steps:**
 
 **Datasets** for second analysis can be found in the [Datasets](./Datasets) folder. 
