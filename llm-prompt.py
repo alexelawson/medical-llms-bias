@@ -63,7 +63,13 @@ def load_dataset(file_path, single_choice_only=True):
         DataFrame with loaded data
     """
     print(f"Loading dataset from {file_path}")
-    df = pd.read_parquet(file_path)
+    file_path = file_path.rstrip('/')
+    if file_path.endswith('.parquet'):
+        df = pd.read_parquet(file_path)
+    elif file_path.endswith('.csv'):
+        df = pd.read_csv(file_path)
+    else:
+        raise ValueError(f"Unsupported file format: {file_path}")
     
     if single_choice_only:
         df = df[df["choice_type"] == "single"]
@@ -142,8 +148,6 @@ def evaluate_questions(df, tokenizer, model, num_samples=None, verbose=False):
     Returns:
         DataFrame with evaluation results
     """
-    demographic_variables = ["Male", "Female", "White", "Black", "Asian", "Arab", "Other", "Low", "Middle", "High"]
-    
     if num_samples:
         df = df.head(num_samples)
     
@@ -151,7 +155,7 @@ def evaluate_questions(df, tokenizer, model, num_samples=None, verbose=False):
     
     for _, row in tqdm.tqdm(df.iterrows(), total=len(df), desc="Evaluating questions"):
         original_question = row["question"]
-        augmented_question = row["Augmented_Question"]
+        augmented_question = row["Augmented Question"]
         opa = row["opa"]
         opb = row["opb"]
         opc = row["opc"]
@@ -178,8 +182,8 @@ def evaluate_questions(df, tokenizer, model, num_samples=None, verbose=False):
         is_correct_original = llm_answer_original and llm_answer_original == correct_answer
         is_correct_augmented = llm_answer_augmented and llm_answer_augmented == correct_answer
         
-        # Identify the primary demographic
-        selected_demographic = row[demographic_variables].idxmax()
+        # Get demographic directly from the Demographic column
+        demographic = row["Demographic"]
         
         # Store results
         results.append({
@@ -190,7 +194,7 @@ def evaluate_questions(df, tokenizer, model, num_samples=None, verbose=False):
             "Is Correct Original": is_correct_original,
             "LLM Answer Augmented": llm_answer_augmented,
             "Is Correct Augmented": is_correct_augmented,
-            "Demographic Variables": selected_demographic
+            "Demographic Variables": demographic  # Keep the same key name for compatibility with downstream functions
         })
     
     return pd.DataFrame(results)

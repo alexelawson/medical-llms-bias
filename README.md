@@ -8,6 +8,25 @@
 
 - _**Python Scripts Used to Produce Analysis/Results**_ can be found in the [Data-Augmentation-Scripts](./Data-Augmentation-Scripts) folder. The prompter for GPT augmentation can also be found in this folder. 
 
+**Analysis Pipeline Instructions:**
+
+1. First, merge the augmented questions with original data:
+```bash
+python Data-Augmentation-Scripts/augmented-original-file-merge.py
+```
+Note: You may need to adjust file paths in the script before running.
+
+2. Generate demographic analysis results:
+```bash
+python Data-Augmentation-Scripts/bydemographic.py
+```
+This will create various CSV files including demo_accuracy.csv in the Results01 folder.
+
+Additional Analysis Scripts:
+- `differences-by-topic.py`: Analyzes accuracy differences by subject/topic
+- `more-analysis.py` and `more-plots.py`: Generates additional metrics and visualizations
+- `all-differences.py`: Performs comprehensive difference analysis
+
 **Next Steps:**
 
 **Datasets** for second analysis can be found in the [Datasets](./Datasets) folder. 
