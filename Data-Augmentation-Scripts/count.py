@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # Load your dataset into a DataFrame
-df = pd.read_csv("/Users/alexlawson/Desktop/LLM-eval/merged_augmented_questions.csv")
+df = pd.read_csv("/Users/alexlawson/Desktop/LLM-eval/augmented_dataset.csv")
 
 # ------------------------------
 # 1. Overall unique counts
@@ -37,12 +37,12 @@ unique_questions_by_subject = (
 # ------------------------------
 
 # Group by 'Demographic Variables' and count unique augmented questions
-unique_augmented_by_demographic = (
-    df.groupby('Demographic Variables')['Augmented_Question']
-      .nunique()
-      .reset_index()
-      .rename(columns={'Augmented_Question': 'unique_augmented_questions'})
-)
+# unique_augmented_by_demographic = (
+#     df.groupby('Demographic Variables')['Augmented_Question']
+#       .nunique()
+#       .reset_index()
+#       .rename(columns={'Augmented_Question': 'unique_augmented_questions'})
+# )
 
 # ------------------------------
 # Print DataFrames for verification
@@ -52,7 +52,7 @@ print(overall_stats)
 print("\nUnique Questions by Subject:")
 print(unique_questions_by_subject)
 print("\nUnique Augmented Questions by Demographic:")
-print(unique_augmented_by_demographic)
+#print(unique_augmented_by_demographic)
 
 # ------------------------------
 # Visualizations
@@ -71,15 +71,15 @@ plt.tight_layout()
 plt.savefig("unique_questions_by_subject.png")
 plt.show()
 
-# Bar chart for Unique Augmented Questions by Demographic
-plt.figure(figsize=(10, 6))
-plt.bar(unique_augmented_by_demographic['Demographic Variables'],
-        unique_augmented_by_demographic['unique_augmented_questions'],
-        color='salmon')
-plt.xlabel('Demographic Variables')
-plt.ylabel('Unique Augmented Questions')
-plt.title('Unique Augmented Questions by Demographic')
-plt.xticks(rotation=45)
-plt.tight_layout()
-plt.savefig("unique_augmented_by_demographic.png")
-plt.show()
+# # Bar chart for Unique Augmented Questions by Demographic
+# plt.figure(figsize=(10, 6))
+# plt.bar(unique_augmented_by_demographic['Demographic Variables'],
+#         unique_augmented_by_demographic['unique_augmented_questions'],
+#         color='salmon')
+# plt.xlabel('Demographic Variables')
+# plt.ylabel('Unique Augmented Questions')
+# plt.title('Unique Augmented Questions by Demographic')
+# plt.xticks(rotation=45)
+# plt.tight_layout()
+# plt.savefig("unique_augmented_by_demographic.png")
+# plt.show()
