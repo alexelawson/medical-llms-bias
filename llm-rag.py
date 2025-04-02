@@ -19,11 +19,12 @@ import torch
 import tqdm
 from pathlib import Path
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
+from src.medrag import MedRAG
 
-cur_dir = os.path.dirname(os.path.abspath(__file__))
-medrag_dir = os.path.join(cur_dir, "MedRAG")
-sys.path.append(medrag_dir)
-from src.medrag import MedRAG  # Add import for MedRAG class
+"""
+move to MedRAG directory and run:
+python llm-rag.py --data ../Datasets/GPT3.5turbo-augmentedquestions02.csv --output-dir ../results_rag/ --cache-dir ../.cache --start 0 --end 1557
+"""
 
 
 def setup_environment(cache_dir):
@@ -69,7 +70,13 @@ def load_dataset(file_path, single_choice_only=True):
         DataFrame with loaded data
     """
     print(f"Loading dataset from {file_path}")
-    df = pd.read_parquet(file_path)
+    file_path = file_path.rstrip('/')
+    if file_path.endswith('.parquet'):
+        df = pd.read_parquet(file_path)
+    elif file_path.endswith('.csv'):
+        df = pd.read_csv(file_path)
+    else:
+        raise ValueError(f"Unsupported file format: {file_path}")
     
     if single_choice_only:
         df = df[df["choice_type"] == "single"]
@@ -147,8 +154,6 @@ def evaluate_questions(df, medrag, num_samples=None, verbose=False, k=32):
     Returns:
         DataFrame with evaluation results
     """
-    demographic_variables = ["Male", "Female", "White", "Black", "Asian", "Arab", "Other", "Low", "Middle", "High"]
-    
     if num_samples:
         df = df.head(num_samples)
     
@@ -156,7 +161,7 @@ def evaluate_questions(df, medrag, num_samples=None, verbose=False, k=32):
     
     for _, row in tqdm.tqdm(df.iterrows(), total=len(df), desc="Evaluating questions"):
         original_question = row["question"]
-        augmented_question = row["Augmented_Question"]
+        augmented_question = row["Augmented Question"]
         opa = row["opa"]
         opb = row["opb"]
         opc = row["opc"]
@@ -179,8 +184,8 @@ def evaluate_questions(df, medrag, num_samples=None, verbose=False, k=32):
         is_correct_original = llm_answer_original and llm_answer_original == correct_answer
         is_correct_augmented = llm_answer_augmented and llm_answer_augmented == correct_answer
         
-        # Identify the primary demographic
-        selected_demographic = row[demographic_variables].idxmax()
+        # Get demographic directly from the Demographic column
+        demographic = row["Demographic"]
         
         # Store results
         results.append({
@@ -191,7 +196,7 @@ def evaluate_questions(df, medrag, num_samples=None, verbose=False, k=32):
             "Is Correct Original": is_correct_original,
             "LLM Answer Augmented": llm_answer_augmented,
             "Is Correct Augmented": is_correct_augmented,
-            "Demographic Variables": selected_demographic
+            "Demographic Variables": demographic  # Keep the same key name for compatibility with downstream functions
         })
     
     return pd.DataFrame(results)
@@ -392,7 +397,17 @@ def main():
     parser.add_argument("--verbose", action="store_true",
                       help="Print detailed output")
     
+    # Modify start and end arguments to be required
+    parser.add_argument("--start", type=int, required=True,
+                      help="Starting index for data chunking")
+    parser.add_argument("--end", type=int, required=True,
+                      help="Ending index for data chunking")
+    
     args = parser.parse_args()
+    
+    # Modify output directory to include start and end indices
+    base_output_dir = args.output_dir.rstrip('/')  # Remove trailing slash if present
+    args.output_dir = f"{base_output_dir}_{args.start}_{args.end}"
     
     # Set up environment
     workdir = Path.cwd()
@@ -401,11 +416,16 @@ def main():
     
     # Load dataset
     df = load_dataset(args.data)
-
-    if args.samples:
-        df = df.head(args.samples)
-    else:
-        df = df.head(60)  # Default to 60 samples if not specified
+    
+    # Validate and apply chunking
+    if args.start >= len(df):
+        args.start = len(df) - 1
+    if args.end > len(df):
+        args.end = len(df)
+    if args.start >= args.end:
+        raise ValueError(f"Start index ({args.start}) must be less than end index ({args.end})")
+    
+    df = df.iloc[args.start:args.end]
     
     # Initialize MedRAG once
     print("Initializing MedRAG...")
