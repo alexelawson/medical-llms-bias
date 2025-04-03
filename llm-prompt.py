@@ -134,6 +134,64 @@ def query_llm_local(tokenizer, model, prompt):
         return None  # No valid answer found
 
 
+def format_cot_prompt(question, a, b, c, d):
+    """Format a multiple choice question prompt with chain of thought reasoning."""
+    return (
+        f"Answer the following multiple choice question. First think through the problem step-by-step, then select the correct answer.\n"
+        f"Question: {question}\n"
+        f"1. {a}\n"
+        f"2. {b}\n"
+        f"3. {c}\n"
+        f"4. {d}\n\n"
+        f"Example Answer: 3. {c}\n"
+        f"Your Answer: "
+        f"The answer can be derived from the following steps:\n"
+    )
+
+
+def query_llm_cot(tokenizer, model, prompt):
+    """
+    Query the local LLM model with chain of thought reasoning.
+    
+    Args:
+        tokenizer: The tokenizer to use
+        model: The model to query
+        prompt: The prompt to send to the model
+        
+    Returns:
+        The extracted answer (1-4) and reasoning or None if no valid answer found
+    """
+    inputs = tokenizer(prompt, return_tensors="pt")
+    
+    # Move inputs to the same device as the model's first parameter
+    device = next(model.parameters()).device
+    inputs = {k: v.to(device) for k, v in inputs.items()}
+
+    with torch.no_grad():
+        output = model.generate(
+            **inputs,
+            max_new_tokens=2048,  # Increased to allow for reasoning
+            temperature=0.1,  # Ensures deterministic output
+            do_sample=True,
+            pad_token_id=tokenizer.eos_token_id
+        )
+
+    response_text = tokenizer.decode(
+        output[:, inputs["input_ids"].shape[-1]:][0], 
+        skip_special_tokens=True
+    ).strip()
+
+    # Extract the answer number
+    pattern = r"([1-4])\."
+    match = re.search(pattern, response_text)
+    
+    if match:
+        return match.group(1), response_text  # Return both the answer number and reasoning
+    else:
+        print(f"No match found in response_text: {response_text}")
+        return None, response_text  # No valid answer found but return reasoning
+
+
 def evaluate_questions(df, tokenizer, model, num_samples=None, verbose=False):
     """
     Evaluate the model on both original and augmented questions.
@@ -195,6 +253,74 @@ def evaluate_questions(df, tokenizer, model, num_samples=None, verbose=False):
             "LLM Answer Augmented": llm_answer_augmented,
             "Is Correct Augmented": is_correct_augmented,
             "Demographic Variables": demographic  # Keep the same key name for compatibility with downstream functions
+        })
+    
+    return pd.DataFrame(results)
+
+
+def evaluate_questions_cot(df, tokenizer, model, num_samples=None, verbose=False):
+    """
+    Evaluate the model on both original and augmented questions with chain of thought.
+    
+    Args:
+        df: DataFrame with questions
+        tokenizer: The tokenizer to use
+        model: The model to query
+        num_samples: Number of samples to evaluate (None for all)
+        verbose: Whether to print detailed output
+        
+    Returns:
+        DataFrame with evaluation results including reasoning
+    """
+    if num_samples:
+        df = df.head(num_samples)
+    
+    results = []
+    
+    for _, row in tqdm.tqdm(df.iterrows(), total=len(df), desc="Evaluating questions"):
+        original_question = row["question"]
+        augmented_question = row["Augmented Question"]
+        opa = row["opa"]
+        opb = row["opb"]
+        opc = row["opc"]
+        opd = row["opd"]
+        correct_answer = str(int(row["cop"]) + 1)  # Convert to 1-indexed
+        
+        # Format the prompts (standard for original, CoT for augmented)
+        prompt_original = format_prompt(original_question, opa, opb, opc, opd)
+        prompt_augmented_cot = format_cot_prompt(augmented_question, opa, opb, opc, opd)
+        
+        # Query the model
+        llm_answer_original = query_llm_local(tokenizer, model, prompt_original)
+        llm_answer_augmented, reasoning = query_llm_cot(tokenizer, model, prompt_augmented_cot)
+        
+        if verbose:
+            print(f"Original Q: {original_question}")
+            print(f"Augmented Q: {augmented_question}")
+            print(f"Correct: {correct_answer}")
+            print(f"LLM (Original): {llm_answer_original}")
+            print(f"LLM (Augmented): {llm_answer_augmented}")
+            print(f"Reasoning: {reasoning}")
+            print("-" * 50)
+        
+        # Check correctness
+        is_correct_original = llm_answer_original and llm_answer_original == correct_answer
+        is_correct_augmented = llm_answer_augmented and llm_answer_augmented == correct_answer
+        
+        # Get demographic directly from the Demographic column
+        demographic = row["Demographic"]
+        
+        # Store results
+        results.append({
+            "Question": original_question,
+            "Augmented Question": augmented_question,
+            "Correct Answer": correct_answer,
+            "LLM Answer Original": llm_answer_original,
+            "Is Correct Original": is_correct_original,
+            "LLM Answer Augmented": llm_answer_augmented,
+            "Is Correct Augmented": is_correct_augmented,
+            "Reasoning": reasoning,
+            "Demographic Variables": demographic
         })
     
     return pd.DataFrame(results)
@@ -391,6 +517,10 @@ def main():
     parser.add_argument("--end", type=int, required=True,
                       help="Ending index for data chunking")
     
+    # Add a new argument for chain of thought
+    parser.add_argument("--use-cot", action="store_true",
+                      help="Use chain of thought reasoning for augmented questions")
+    
     args = parser.parse_args()
     
     # Modify output directory to include start and end indices
@@ -418,8 +548,11 @@ def main():
     
     df = df.iloc[args.start:args.end]
     
-    # Evaluate questions
-    results_df = evaluate_questions(df, tokenizer, model, args.samples, args.verbose)
+    # Use the CoT evaluation if specified
+    if args.use_cot:
+        results_df = evaluate_questions_cot(df, tokenizer, model, args.samples, args.verbose)
+    else:
+        results_df = evaluate_questions(df, tokenizer, model, args.samples, args.verbose)
     
     # Compute metrics
     overall_metrics, group_metrics = compute_summary_metrics(results_df)
